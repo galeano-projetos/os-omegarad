@@ -2,7 +2,91 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
-// GET /api/cnpj/[cnpj] - Consulta CNPJ na BrasilAPI (Receita Federal)
+interface CNPJResult {
+  razaoSocial: string
+  nomeFantasia: string
+  email: string
+  telefone: string
+  endereco: string
+  cidade: string
+  estado: string
+  cep: string
+}
+
+// Tenta BrasilAPI
+async function fetchBrasilAPI(cnpj: string): Promise<CNPJResult | null> {
+  const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`, {
+    cache: 'no-store',
+  })
+  if (!res.ok) return null
+
+  const data = await res.json()
+  const partsEndereco = [
+    data.descricao_tipo_de_logradouro,
+    data.logradouro,
+    data.numero,
+    data.complemento,
+    data.bairro,
+  ].filter(Boolean)
+
+  let telefone = (data.ddd_telefone_1 || '').replace(/\D/g, '')
+  if (telefone.length === 10) {
+    telefone = `(${telefone.slice(0, 2)}) ${telefone.slice(2, 6)}-${telefone.slice(6)}`
+  } else if (telefone.length === 11) {
+    telefone = `(${telefone.slice(0, 2)}) ${telefone.slice(2, 7)}-${telefone.slice(7)}`
+  }
+
+  return {
+    razaoSocial: data.razao_social || '',
+    nomeFantasia: data.nome_fantasia || '',
+    email: (data.email || '').toLowerCase(),
+    telefone,
+    endereco: partsEndereco.join(', '),
+    cidade: data.municipio || '',
+    estado: data.uf || '',
+    cep: data.cep || '',
+  }
+}
+
+// Fallback: ReceitaWS
+async function fetchReceitaWS(cnpj: string): Promise<CNPJResult | null> {
+  const res = await fetch(`https://receitaws.com.br/v1/cnpj/${cnpj}`, {
+    cache: 'no-store',
+    headers: { Accept: 'application/json' },
+  })
+  if (!res.ok) return null
+
+  const data = await res.json()
+  if (data.status === 'ERROR') return null
+
+  const partsEndereco = [
+    data.logradouro,
+    data.numero,
+    data.complemento,
+    data.bairro,
+  ].filter(Boolean)
+
+  let telefone = (data.telefone || '').replace(/[^\d]/g, '')
+  if (telefone.length > 11) telefone = telefone.slice(0, 11)
+  if (telefone.length === 10) {
+    telefone = `(${telefone.slice(0, 2)}) ${telefone.slice(2, 6)}-${telefone.slice(6)}`
+  } else if (telefone.length === 11) {
+    telefone = `(${telefone.slice(0, 2)}) ${telefone.slice(2, 7)}-${telefone.slice(7)}`
+  }
+
+  return {
+    razaoSocial: data.nome || '',
+    nomeFantasia: data.fantasia || '',
+    email: (data.email || '').toLowerCase(),
+    telefone,
+    endereco: partsEndereco.join(', '),
+    cidade: data.municipio || '',
+    estado: data.uf || '',
+    cep: (data.cep || '').replace(/[^\d]/g, ''),
+  }
+}
+
+// GET /api/cnpj/[cnpj] - Consulta CNPJ com fallback entre APIs
 export async function GET(
   _request: NextRequest,
   { params }: { params: { cnpj: string } }
@@ -19,54 +103,19 @@ export async function GET(
   }
 
   try {
-    const response = await fetch(
-      `https://brasilapi.com.br/api/cnpj/v1/${cnpjDigits}`,
-      { cache: 'no-store' }
-    )
+    // Tenta BrasilAPI primeiro, depois ReceitaWS como fallback
+    let result = await fetchBrasilAPI(cnpjDigits).catch(() => null)
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => '')
-      console.error(`BrasilAPI error: status=${response.status} body=${errorBody}`)
-      if (response.status === 404) {
-        return NextResponse.json({ error: 'CNPJ não encontrado' }, { status: 404 })
-      }
-      if (response.status === 429) {
-        return NextResponse.json({ error: 'Muitas consultas, tente novamente em instantes' }, { status: 429 })
-      }
-      return NextResponse.json({ error: `Erro ao consultar CNPJ (${response.status})` }, { status: 502 })
+    if (!result) {
+      console.log('BrasilAPI falhou, tentando ReceitaWS...')
+      result = await fetchReceitaWS(cnpjDigits).catch(() => null)
     }
 
-    const data = await response.json()
-
-    // Monta endereço completo
-    const partsEndereco = [
-      data.descricao_tipo_de_logradouro,
-      data.logradouro,
-      data.numero,
-      data.complemento,
-      data.bairro,
-    ].filter(Boolean)
-
-    const endereco = partsEndereco.join(', ')
-
-    // Formata telefone (pode vir como "1133334444" ou "11 3333-4444")
-    let telefone = (data.ddd_telefone_1 || '').replace(/\D/g, '')
-    if (telefone.length === 10) {
-      telefone = `(${telefone.slice(0, 2)}) ${telefone.slice(2, 6)}-${telefone.slice(6)}`
-    } else if (telefone.length === 11) {
-      telefone = `(${telefone.slice(0, 2)}) ${telefone.slice(2, 7)}-${telefone.slice(7)}`
+    if (!result) {
+      return NextResponse.json({ error: 'CNPJ não encontrado' }, { status: 404 })
     }
 
-    return NextResponse.json({
-      razaoSocial: data.razao_social || '',
-      nomeFantasia: data.nome_fantasia || '',
-      email: (data.email || '').toLowerCase(),
-      telefone,
-      endereco,
-      cidade: data.municipio || '',
-      estado: data.uf || '',
-      cep: data.cep || '',
-    })
+    return NextResponse.json(result)
   } catch (error) {
     console.error('Erro ao consultar CNPJ:', error)
     return NextResponse.json({ error: 'Erro ao consultar CNPJ' }, { status: 500 })
