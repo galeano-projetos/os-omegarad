@@ -15,6 +15,8 @@ import {
   X,
   Upload,
   XCircle,
+  Camera,
+  ImageIcon,
 } from 'lucide-react'
 import { formatCNPJ, formatDate, cn } from '@/lib/utils'
 import Button from '@/components/ui/Button'
@@ -195,6 +197,8 @@ export default function NovaOSPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
 
   // ── Toast helpers ───────────────────────────────────────────────────────
 
@@ -733,22 +737,43 @@ export default function NovaOSPage() {
       <div className="space-y-3">
         <label className="block text-sm font-medium text-dark-700">Fotos</label>
 
-        <label className="flex flex-col items-center gap-2 p-6 border-2 border-dashed border-dark-200 rounded-lg hover:border-primary hover:bg-primary-50/30 cursor-pointer transition-colors">
-          <Upload className="h-8 w-8 text-dark-300" />
-          <span className="text-sm text-dark-500">
-            Clique para selecionar fotos ou arraste aqui
-          </span>
-          <span className="text-xs text-dark-300">
-            JPEG, PNG ou WebP. Maximo 10MB por arquivo.
-          </span>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="flex flex-col items-center gap-2 p-5 border-2 border-dashed border-dark-200 rounded-lg hover:border-primary hover:bg-primary-50/30 active:bg-primary-50/50 cursor-pointer transition-colors"
+          >
+            <Camera className="h-8 w-8 text-primary" />
+            <span className="text-sm font-medium text-dark-700">Tirar Foto</span>
+            <span className="text-xs text-dark-300">Abrir camera</span>
+          </button>
           <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handlePhotoUpload}
+            className="sr-only"
+          />
+
+          <button
+            type="button"
+            onClick={() => galleryInputRef.current?.click()}
+            className="flex flex-col items-center gap-2 p-5 border-2 border-dashed border-dark-200 rounded-lg hover:border-primary hover:bg-primary-50/30 active:bg-primary-50/50 cursor-pointer transition-colors"
+          >
+            <ImageIcon className="h-8 w-8 text-dark-400" />
+            <span className="text-sm font-medium text-dark-700">Galeria</span>
+            <span className="text-xs text-dark-300">Escolher fotos</span>
+          </button>
+          <input
+            ref={galleryInputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
             multiple
             onChange={handlePhotoUpload}
             className="sr-only"
           />
-        </label>
+        </div>
 
         {photos.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
