@@ -1,0 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #D1B829;
+  --primary-dark: #B89E1F;
+  --primary-light: #E8D44D;
+  --background: #f8f9fa;
+  --foreground: #1a1a1a;
+  --sidebar-bg: #111111;
+  --sidebar-text: #e5e5e5;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* Canvas de assinatura */
+.signature-canvas {
+  border: 2px dashed #d1d5db;
+  border-radius: 8px;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.signature-canvas:hover {
+  border-color: var(--primary);
+}

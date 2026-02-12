@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  colaborador
+  tecnico
+  cliente
+}
+
+enum OSStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  COMPLETED
+  CANCELED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  role          UserRole  @default(tecnico)
+  active        Boolean   @default(true)
+  clienteId     String?
+  cliente       Cliente?  @relation(fields: [clienteId], references: [id])
+  ordensServico ServiceOrder[] @relation("TecnicoOrdens")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Cliente {
+  id            String    @id @default(cuid())
+  razaoSocial   String
+  nomeFantasia  String?
+  cnpj          String?   @unique
+  cpf           String?
+  email         String?
+  telefone      String?
+  endereco      String?
+  cidade        String?
+  estado        String?
+  cep           String?
+  emailGrupo    String?
+  isMatriz      Boolean   @default(true)
+  active        Boolean   @default(true)
+  users         User[]
+  equipamentos  Equipamento[]
+  ordensServico ServiceOrder[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("clientes")
+}
+
+model Equipamento {
+  id              String    @id @default(cuid())
+  clienteId       String
+  cliente         Cliente   @relation(fields: [clienteId], references: [id])
+  nome            String
+  tipo            String?
+  fabricante      String?
+  modelo          String?
+  numeroSerie     String?
+  registroAnvisa  String?
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([clienteId, numeroSerie])
+  @@map("equipamentos")
+}
+
+model ServiceOrder {
+  id                    String    @id @default(cuid())
+  osNumber              Int       @unique
+  clienteId             String
+  cliente               Cliente   @relation(fields: [clienteId], references: [id])
+  tecnicoId             String
+  tecnico               User      @relation("TecnicoOrdens", fields: [tecnicoId], references: [id])
+  serviceDate           DateTime
+  horaInicio            String?
+  horaFim               String?
+  observations          String?
+  equipments            Json?
+  status                OSStatus  @default(DRAFT)
+  pdfConteudo           Bytes?
+  emailEnviadoEm        DateTime?
+  whatsappEnviadoEm     DateTime?
+  signatureToken        String?   @unique
+  signatureTokenExpires DateTime?
+  fotos                 ServiceOrderPhoto[]
+  assinaturas           ServiceOrderSignature[]
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("service_orders")
+}
+
+model ServiceOrderPhoto {
+  id              String       @id @default(cuid())
+  serviceOrderId  String
+  serviceOrder    ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  conteudo        Bytes
+  mimeType        String
+  nomeArquivo     String?
+  tamanho         Int
+  legenda         String?
+  equipmentIndex  Int?
+  createdAt       DateTime     @default(now())
+
+  @@index([serviceOrderId])
+  @@index([serviceOrderId, equipmentIndex])
+  @@map("service_order_photos")
+}
+
+model ServiceOrderSignature {
+  id               String       @id @default(cuid())
+  serviceOrderId   String
+  serviceOrder     ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
+  tipo             String       // "tecnico" ou "cliente"
+  nomeSignatario   String
+  cpfSignatario    String?
+  cargoSignatario  String?
+  imagemAssinatura Bytes
+  ip               String?
+  userAgent        String?
+  assinadoEm       DateTime     @default(now())
+
+  @@index([serviceOrderId])
+  @@index([tipo])
+  @@map("service_order_signatures")
+}

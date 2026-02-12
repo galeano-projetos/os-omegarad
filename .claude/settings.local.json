@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@14:*)",
+      "Bash(powershell -Command \"Copy-Item -Path ''temp-project\\\\*'' -Destination ''.'' -Recurse -Force; Remove-Item -Path ''temp-project'' -Recurse -Force\")",
+      "Bash(npm install:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npx next build:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(dir:*)",
+      "Bash(docker compose up:*)",
+      "Bash(docker ps:*)",
+      "Bash(timeout:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /PID 3728 /F\")",
+      "Bash(cmd /c \"taskkill /IM node.exe /F\")",
+      "Bash(cmd /c \"taskkill /PID 3728 /F & taskkill /PID 15772 /F & taskkill /PID 14664 /F & taskkill /PID 28408 /F\")",
+      "Bash(find:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
