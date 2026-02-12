@@ -25,10 +25,15 @@ export async function GET(
     )
 
     if (!response.ok) {
+      const errorBody = await response.text().catch(() => '')
+      console.error(`BrasilAPI error: status=${response.status} body=${errorBody}`)
       if (response.status === 404) {
         return NextResponse.json({ error: 'CNPJ não encontrado' }, { status: 404 })
       }
-      return NextResponse.json({ error: 'Erro ao consultar CNPJ' }, { status: 502 })
+      if (response.status === 429) {
+        return NextResponse.json({ error: 'Muitas consultas, tente novamente em instantes' }, { status: 429 })
+      }
+      return NextResponse.json({ error: `Erro ao consultar CNPJ (${response.status})` }, { status: 502 })
     }
 
     const data = await response.json()
