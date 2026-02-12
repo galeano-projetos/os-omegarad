@@ -100,7 +100,7 @@ function generateLabelConfigs(os: OSInfo): LabelConfig[] {
   const equips = os.equipments || []
 
   equips.forEach((eq, eIdx) => {
-    let svcNames = eq.serviceTypeNames && eq.serviceTypeNames.length > 0
+    const svcNames = eq.serviceTypeNames && eq.serviceTypeNames.length > 0
       ? eq.serviceTypeNames
       : (eq.serviceTypeName ? [eq.serviceTypeName] : [])
 
