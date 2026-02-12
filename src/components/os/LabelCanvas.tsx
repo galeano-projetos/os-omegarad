@@ -135,7 +135,7 @@ export default function LabelCanvas({ data, onCanvasReady }: LabelCanvasProps) {
     const brandMaxW = VW - brandX - pad
 
     if (assets.logoImg) {
-      const logoTargetH = 100
+      const logoTargetH = 120
       const aspect = assets.logoImg.width / assets.logoImg.height
       const logoTargetW = Math.min(logoTargetH * aspect, brandMaxW)
       const actualH = logoTargetW / aspect
