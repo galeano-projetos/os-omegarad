@@ -352,8 +352,8 @@ export default function OSListPage() {
       ) : (
         <>
           {/* Table (desktop) */}
-          <div className="hidden lg:block bg-white rounded-xl border border-dark-100 overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="hidden lg:block bg-white rounded-xl border border-dark-100">
+            <div>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-dark-100 bg-dark-50/50">
